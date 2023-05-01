@@ -1,6 +1,5 @@
 import sys
 import argparse, os
-import cv2
 import torch
 import numpy as np
 from omegaconf import OmegaConf
@@ -12,12 +11,13 @@ from torchvision.utils import make_grid
 from pytorch_lightning import seed_everything
 from torch import autocast
 from contextlib import nullcontext
-# from imwatermark import WatermarkEncoder
 
 from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
 from ldm.models.diffusion.dpm_solver import DPMSolverSampler
+
+from scripts.utils.wm import make_wm_encoder, put_watermark
 
 torch.set_grad_enabled(False)
 
@@ -26,7 +26,6 @@ print('=== CUDA AVAILABLE ===', torch.cuda.is_available())
 def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
-
 
 def load_model_from_config(config, ckpt, device=torch.device("cuda"), verbose=False):
     print(f"Loading model from {ckpt}")
@@ -203,16 +202,8 @@ def parse_args():
         action='store_true',
         help="Use bfloat16",
     )
-    print(444, sys.argv)
     opt = parser.parse_args()
     return opt
-
-
-def put_watermark(img, wm_encoder=None):
-    img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-    img = Image.fromarray(img[:, :, ::-1])
-    return img
-
 
 def main(opt):
     print("=== OPTS ===", opt)
@@ -231,6 +222,8 @@ def main(opt):
 
     os.makedirs(opt.outdir, exist_ok=True)
     outpath = opt.outdir
+
+    wm_encoder = make_wm_encoder()
 
     batch_size = opt.n_samples
     n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
@@ -359,7 +352,7 @@ def main(opt):
                     for x_sample in x_samples:
                         x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                         img = Image.fromarray(x_sample.astype(np.uint8))
-                        img = put_watermark(img)
+                        img = put_watermark(img, wm_encoder)
                         img.save(os.path.join(sample_path, f"{base_count:05}.png"))
                         base_count += 1
                         sample_count += 1
@@ -374,7 +367,7 @@ def main(opt):
             # to image
             grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
             grid = Image.fromarray(grid.astype(np.uint8))
-            grid = put_watermark(grid)
+            grid = put_watermark(grid, wm_encoder)
             grid.save(os.path.join(outpath, f'grid-{grid_count:04}.png'))
             grid_count += 1
 

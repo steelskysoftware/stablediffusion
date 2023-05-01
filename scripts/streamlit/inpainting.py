@@ -8,18 +8,11 @@ from omegaconf import OmegaConf
 from einops import repeat
 from streamlit_drawable_canvas import st_canvas
 
+from scripts.utils.wm import make_wm_encoder, put_watermark
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config
 
-
 torch.set_grad_enabled(False)
-
-
-def put_watermark(img, wm_encoder=None):
-    img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-    img = Image.fromarray(img[:, :, ::-1])
-    return img
-
 
 @st.cache(allow_output_mutation=True)
 def initialize_model(config, ckpt):
@@ -67,6 +60,8 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = sampler.model
 
+    wm_encoder = make_wm_encoder()
+
     prng = np.random.RandomState(seed)
     start_code = prng.randn(num_samples, 4, h // 8, w // 8)
     start_code = torch.from_numpy(start_code).to(device=device, dtype=torch.float32)
@@ -113,7 +108,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
                                  min=0.0, max=1.0)
 
             result = result.cpu().numpy().transpose(0, 2, 3, 1) * 255
-    return [put_watermark(Image.fromarray(img.astype(np.uint8))) for img in result]
+    return [put_watermark(Image.fromarray(img.astype(np.uint8)), wm_encoder) for img in result]
 
 
 def run():

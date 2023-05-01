@@ -6,7 +6,7 @@ import gradio as gr
 from PIL import Image
 from omegaconf import OmegaConf
 from einops import repeat
-from imwatermark import WatermarkEncoder
+# from imwatermark import WatermarkEncoder
 from pathlib import Path
 
 from ldm.models.diffusion.ddim import DDIMSampler
@@ -17,10 +17,12 @@ torch.set_grad_enabled(False)
 
 
 def put_watermark(img, wm_encoder=None):
-    if wm_encoder is not None:
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-        img = wm_encoder.encode(img, 'dwtDct')
-        img = Image.fromarray(img[:, :, ::-1])
+#     if wm_encoder is not None:
+#         img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+#         img = wm_encoder.encode(img, 'dwtDct')
+#         img = Image.fromarray(img[:, :, ::-1])
+    img = Image.fromarray(img[:, :, ::-1])
+    img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     return img
 
 
@@ -71,10 +73,10 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
         "cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = sampler.model
 
-    print("Creating invisible watermark encoder (see https://github.com/ShieldMnt/invisible-watermark)...")
-    wm = "SDV2"
-    wm_encoder = WatermarkEncoder()
-    wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
+    # print("Creating invisible watermark encoder (see https://github.com/ShieldMnt/invisible-watermark)...")
+    # wm = "SDV2"
+    # wm_encoder = WatermarkEncoder()
+    # wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
 
     prng = np.random.RandomState(seed)
     start_code = prng.randn(num_samples, 4, h // 8, w // 8)
@@ -125,7 +127,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
                              min=0.0, max=1.0)
 
         result = result.cpu().numpy().transpose(0, 2, 3, 1) * 255
-    return [put_watermark(Image.fromarray(img.astype(np.uint8)), wm_encoder) for img in result]
+    return [put_watermark(Image.fromarray(img.astype(np.uint8))) for img in result]
 
 def pad_image(input_image):
     pad_w, pad_h = np.max(((2, 2), np.ceil(

@@ -1,0 +1,4 @@
+module: 'txt'
+args:
+  ckpt: ./768-v-ema.ckpt
+  device: cuda

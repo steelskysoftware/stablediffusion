@@ -6,7 +6,6 @@ from PIL import Image
 from omegaconf import OmegaConf
 from einops import repeat, rearrange
 from pytorch_lightning import seed_everything
-from imwatermark import WatermarkEncoder
 
 from scripts.txt2img import put_watermark
 from ldm.models.diffusion.ddim import DDIMSampler
@@ -60,10 +59,6 @@ def paint(sampler, image, prompt, seed, scale, h, w, steps, num_samples=1, callb
     start_code = prng.randn(num_samples, model.channels, h , w)
     start_code = torch.from_numpy(start_code).to(device=device, dtype=torch.float32)
 
-    print("Creating invisible watermark encoder (see https://github.com/ShieldMnt/invisible-watermark)...")
-    wm = "SDV2"
-    wm_encoder = WatermarkEncoder()
-    wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
     with torch.no_grad(),\
             torch.autocast("cuda"):
         batch = make_batch_sd(image, txt=prompt, device=device, num_samples=num_samples)
@@ -110,7 +105,7 @@ def paint(sampler, image, prompt, seed, scale, h, w, steps, num_samples=1, callb
     result = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
     result = result.cpu().numpy().transpose(0, 2, 3, 1) * 255
     st.text(f"upscaled image shape: {result.shape}")
-    return [put_watermark(Image.fromarray(img.astype(np.uint8)), wm_encoder) for img in result]
+    return [put_watermark(Image.fromarray(img.astype(np.uint8))) for img in result]
 
 
 def run():

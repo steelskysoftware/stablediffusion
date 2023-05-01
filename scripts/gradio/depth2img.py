@@ -6,8 +6,6 @@ from PIL import Image
 from omegaconf import OmegaConf
 from einops import repeat, rearrange
 from pytorch_lightning import seed_everything
-from imwatermark import WatermarkEncoder
-
 from scripts.txt2img import put_watermark
 from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
@@ -59,11 +57,6 @@ def paint(sampler, image, prompt, t_enc, seed, scale, num_samples=1, callback=No
     model = sampler.model
     seed_everything(seed)
 
-    print("Creating invisible watermark encoder (see https://github.com/ShieldMnt/invisible-watermark)...")
-    wm = "SDV2"
-    wm_encoder = WatermarkEncoder()
-    wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
-
     with torch.no_grad(),\
             torch.autocast("cuda"):
         batch = make_batch_sd(
@@ -109,7 +102,7 @@ def paint(sampler, image, prompt, t_enc, seed, scale, num_samples=1, callback=No
         x_samples_ddim = model.decode_first_stage(samples)
         result = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
         result = result.cpu().numpy().transpose(0, 2, 3, 1) * 255
-    return [depth_image] + [put_watermark(Image.fromarray(img.astype(np.uint8)), wm_encoder) for img in result]
+    return [depth_image] + [put_watermark(Image.fromarray(img.astype(np.uint8))) for img in result]
 
 
 def pad_image(input_image):

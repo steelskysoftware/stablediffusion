@@ -13,8 +13,6 @@ from torchvision.utils import make_grid
 from torch import autocast
 from contextlib import nullcontext
 from pytorch_lightning import seed_everything
-from imwatermark import WatermarkEncoder
-
 
 from scripts.txt2img import put_watermark
 from ldm.util import instantiate_from_config
@@ -195,11 +193,6 @@ def main():
     os.makedirs(opt.outdir, exist_ok=True)
     outpath = opt.outdir
 
-    print("Creating invisible watermark encoder (see https://github.com/ShieldMnt/invisible-watermark)...")
-    wm = "SDV2"
-    wm_encoder = WatermarkEncoder()
-    wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
-
     batch_size = opt.n_samples
     n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
     if not opt.from_file:
@@ -255,7 +248,7 @@ def main():
                         for x_sample in x_samples:
                             x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                             img = Image.fromarray(x_sample.astype(np.uint8))
-                            img = put_watermark(img, wm_encoder)
+                            img = put_watermark(img)
                             img.save(os.path.join(sample_path, f"{base_count:05}.png"))
                             base_count += 1
                         all_samples.append(x_samples)
@@ -268,7 +261,7 @@ def main():
                 # to image
                 grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
                 grid = Image.fromarray(grid.astype(np.uint8))
-                grid = put_watermark(grid, wm_encoder)
+                grid = put_watermark(grid)
                 grid.save(os.path.join(outpath, f'grid-{grid_count:04}.png'))
                 grid_count += 1
 

@@ -2,60 +2,63 @@ import importlib
 import sys
 import yaml
 
-MODULES = {
+
+MODULE_PATHS = {
   'txt': {
-    'script': 'txt2img',
-    'dir': 'scripts',
+    'module': 'txt2img',
+    'path': 'scripts/txt2img.py',
   },
   'img': {
-    'script': 'img2img',
-    'dir': 'scripts',
+    'module': 'img2img',
+    'path': 'scripts/img2img.py',
   },
-  'gradio_depth': {
-    'script': 'depth2img',
-    'dir': 'scripts/gradio',
+  'depth': {
+    'module': 'depth2img',
+    'path': 'scripts/gradio/depth2img.py',
   },
-  'gradio_inpainting': {
-    'script': 'inpainting',
-    'dir': 'scripts/gradio',
+  'inpainting': {
+    'module': 'inpainting',
+    'path': 'scripts/gradio/inpainting.py',
   },
-  'gradio_superresolution': {
-    'script': 'superresolution',
-    'dir': 'scripts/gradio',
+  'superresolution': {
+    'module': 'superresolution',
+    'path': 'scripts/gradio/superresolution.py',
   },
   'streamlit_depth': {
-    'script': 'depth2img',
-    'dir': 'scripts/streamlit',
+    'module': 'depth2img',
+    'path': 'scripts/streamlit/depth2img.py',
   },
   'streamlit_inpainting': {
-    'script': 'inpainting',
-    'dir': 'scripts/streamlit',
+    'module': 'inpainting',
+    'path': 'scripts/streamlit/inpainting.py',
   },
   'streamlit_superresolution': {
-    'script': 'superresolution',
-    'dir': 'scripts/streamlit',
+    'module': 'superresolution',
+    'path': 'scripts/streamlit/superresolution.py',
   },
   'streamlit_stableunclip': {
-    'script': 'stableunclip',
-    'dir': 'scripts/streamlit',
+    'module': 'stableunclip',
+    'path': 'scripts/streamlit/stableunclip.py',
   },
 }
 
-# args = sys.argv[1:]
-
 try:
   with open('config.user.yaml', 'r') as file:
-    config = yaml.safe_load(file)
+    user_config = yaml.safe_load(file)
 
     try:
-      input_module = sys.argv[1] or config['module']
+      input_module = sys.argv[1] or user_config['module']
     except:
       input_module = 'txt'
 
     try:
-      for option in config['args']:
-        if '--' + option not in sys.argv:
-          sys.argv.extend(['--' + option, config['args'][option]])
+      module_config = user_config[input_module]
+
+      for option in module_config['args']:
+        value = module_config['args'][option]
+
+        if '--' + option not in sys.argv and value is not None:
+          sys.argv.extend(['--' + option, value])
 
     except Exception as e:
       print('Config parse error.')
@@ -68,21 +71,51 @@ except Exception as e:
   sys.exit()
 
 
-
 try:
-  module = MODULES[input_module]
+  module = MODULE_PATHS[input_module]
+
 except Exception as e:
   print('Invalid module.', e)
   sys.exit()
 
+for arg in sys.argv:
+  if arg in MODULE_PATHS:
+    sys.argv.remove(arg)
+
+
+print(sys.argv)
+
+
+def main():
+  if 'prompt' in module_config['args']:
+    prompt = input('Prompt:\n')
+    prompt = prompt.strip()
+
+    if prompt is not None:
+      sys.argv.extend(['--prompt', prompt])
+
+
+  spec = importlib.util.spec_from_file_location(module['module'], module['path'])
+  imported_module = importlib.util.module_from_spec(spec)
+  sys.modules[module['module']] = imported_module
+  spec.loader.exec_module(imported_module)
+  # imported_module = importlib.import_module(module['module'])
+
+  try:
+    if imported_module.parse_args is not None:
+      opt = imported_module.parse_args()
+      imported_module.main(opt)
+      return
+
+  except:
+    pass
+
+  imported_module.main()
+
+
 if __name__ == "__main__":
-  prompt = input('Prompt:\n')
-  sys.argv.extend(['--prompt', prompt])
+  main()
 
-  imported_module = importlib.import_module('.' + module['script'], module['dir'])
-
-  opt = imported_module.parse_args()
-  imported_module.main(opt)
 
 
 

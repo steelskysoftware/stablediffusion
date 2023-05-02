@@ -22,6 +22,7 @@ from scripts.utils.wm import make_wm_encoder, put_watermark
 torch.set_grad_enabled(False)
 
 print('=== CUDA AVAILABLE ===', torch.cuda.is_available())
+print(os.environ['PYTORCH_CUDA_ALLOC_CONF'])
 
 def chunk(it, size):
     it = iter(it)
@@ -130,7 +131,7 @@ def parse_args():
     parser.add_argument(
         "--n_samples",
         type=int,
-        default=3,
+        default=1,
         help="how many samples to produce for each given prompt. A.k.a batch size",
     )
     parser.add_argument(

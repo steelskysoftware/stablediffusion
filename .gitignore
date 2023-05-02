@@ -166,3 +166,5 @@ cython_debug/
 
 *.ckpt
 config.user.yaml
+inputs/
+midas_models/

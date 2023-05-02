@@ -1,4 +1,93 @@
 module: 'txt'
-args:
-  ckpt: ./768-v-ema.ckpt
-  device: cuda
+
+txt:
+  args:
+    config: 'configs/stable-diffusion/v2-inference-v.yaml'
+    ckpt: './v2-1_768-ema-pruned.ckpt'
+    prompt: 'A red car'
+    device: 'cuda'
+    n_samples: '2'
+    W: '768'
+    H: '768'
+
+img:
+  args:
+    config: 'configs/stable-diffusion/v2-inference-v.yaml'
+    ckpt: './v2-1_768-ema-pruned.ckpt'
+    prompt: 'A red car'
+    outdir: 'outputs'
+    'init-img': ''
+    'ddim_steps': '50'
+    'ddim_eta': '0.0'
+    n_iter: '1'
+    C: '4'
+    f: '8'
+    n_samples: '2'
+    n_rows: '2'
+    scale: '9.0'
+    strength: '0.8'
+    seed: '42'
+    precision: 'autocast'
+
+gradio_depth:
+  args:
+    config: 'configs/stable-diffusion/v2-midas-inference.yaml'
+    ckpt: './512-depth-ema.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
+
+gradio_inpainting:
+  args:
+    config: 'configs/stable-diffusion/v2-inpainting-inference.yaml'
+    ckpt: './512-inpainting-ema.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
+
+gradio_superresolution:
+  args:
+    config: 'configs/stable-diffusion/x4-upscaling.yaml'
+    ckpt: './x4-upscaler-ema.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
+
+streamlit_depth:
+  args:
+    config: 'configs/stable-diffusion/v2-midas-inference.yaml'
+    ckpt: './512-depth-ema.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
+
+streamlit_inpainting:
+  args:
+    config: 'configs/stable-diffusion/v2-inpainting-inference.yaml'
+    ckpt: './512-inpainting-ema.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
+
+streamlit_superresolution:
+  args:
+    config: 'configs/stable-diffusion/x4-upscaling.yaml'
+    ckpt: './x4-upscaler-ema.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
+
+streamlit_stableunclip:
+  args:
+    config: 'configs/stable-diffusion/v2-1-stable-unclip-h-inference.yaml'
+    ckpt: './v2-1_768-ema-pruned.ckpt'
+    device: 'cuda'
+    n_samples: '1'
+    W: '768'
+    H: '768'
